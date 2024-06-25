@@ -1,0 +1,21 @@
+# Build new image depending on python image latest
+FROM python:latest
+
+# Identify the maintainer of the image
+LABEL version="0.0.2"
+LABEL maintainer="godric.phoenix@gmail.com"
+
+# Create  a directory for our application code and set it as
+RUN  mkdir /app 
+
+WORKDIR /app
+# Add requirements.txt file to the container
+ADD ./requirements.txt /app/
+
+# Install all dependencies listed in requirements.txt
+RUN pip install --upgrade pip && python -m pip install -r requirements.txt
+
+# Copy the rest of the project's
+ADD ./app.py /app/
+
+CMD [ "python","app.py" ]

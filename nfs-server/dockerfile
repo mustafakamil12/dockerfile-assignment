@@ -1,0 +1,20 @@
+# Use the Alpine Linux base image
+FROM alpine:latest
+
+# Install NFS utilities
+RUN apk update && apk add nfs-utils
+
+# Create the exports directory
+RUN mkdir -p /exports
+
+# Copy the NFS server startup script
+COPY start_nfs.sh /
+
+# Set execute permissions for the script
+RUN chmod +x /start_nfs.sh
+
+# Expose the NFS port
+EXPOSE 2049
+
+# Start the NFS server using the script
+ENTRYPOINT ["/start_nfs.sh"]

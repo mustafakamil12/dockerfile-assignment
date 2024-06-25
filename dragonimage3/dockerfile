@@ -1,0 +1,29 @@
+FROM ubuntu:latest
+
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y krb5-user
+
+# Define environment variables
+ENV LDAP_REALM="test777.COM"
+ENV LDAP_KDC="openldap7.test777.com"
+ENV LDAP_ADMIN_SERVER="openldap7.test777.com"
+
+# Generate Kerberos configuration file
+RUN echo "[libdefaults]" >> /etc/krb5.conf && \
+    echo "    default_realm = ${LDAP_REALM}" >> /etc/krb5.conf && \
+    echo "    dns_lookup_kdc = false" >> /etc/krb5.conf && \
+    echo "    dns_lookup_realm = false" >> /etc/krb5.conf && \
+    echo "" >> /etc/krb5.conf && \
+    echo "[realms]" >> /etc/krb5.conf && \
+    echo "    ${LDAP_REALM} = {" >> /etc/krb5.conf && \
+    echo "        kdc = ${LDAP_KDC}" >> /etc/krb5.conf && \
+    echo "        admin_server = ${LDAP_ADMIN_SERVER}" >> /etc/krb5.conf && \
+    echo "    }" >> /etc/krb5.conf && \
+    echo "" >> /etc/krb5.conf && \
+    echo "[domain_realm]" >> /etc/krb5.conf && \
+    echo "    .test777.com = ${LDAP_REALM}" >> /etc/krb5.conf && \
+    echo "    test777.com = ${LDAP_REALM}" >> /etc/krb5.conf
+
+CMD ["/bin/bash"]
+

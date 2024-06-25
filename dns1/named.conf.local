@@ -1,0 +1,4 @@
+zone "domain.local" {
+    type master;
+    file "/etc/bind/zones/domain.local";
+};

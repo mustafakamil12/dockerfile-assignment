@@ -1,0 +1,17 @@
+# Each instruction in this file generates a new layer that gets pushed to your local image cache
+FROM python:latest
+
+# Identify the maintainer of an image
+LABEL version="0.0.1"
+LABEL maintainer="godric.phoenix@gmail.com"
+
+# Add python script
+ADD my_script.py /
+
+# Create Enviroment variable
+ENV DEV_NAME=MUSTAFA
+# Execute python script
+# CMD [ "python","./my_script.py" ]
+
+# Set the default command to keep the container running
+CMD ["tail", "-f", "/dev/null"]

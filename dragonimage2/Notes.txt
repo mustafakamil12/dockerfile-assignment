@@ -1,0 +1,75 @@
+# Creat new network
+docker network create mustafa
+
+
+# Create MSSQL container
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" \
+    -p 1433:1433 --name mssqldb --hostname mssqldb \
+    --network mustafa --dns="172.21.0.10" \
+    -d mcr.microsoft.com/mssql/server:2019-latest
+
+
+
+# Create and spin Oracle
+# docker container run -it --publish 1521:1521 --detach --name oracledb --network mustafa --dns="172.21.0.10" oraclelinux:8-slim
+
+docker container run -it --name oracledb -p 1521:1521 --network mustafa --dns="172.21.0.10" --rm \
+-e ORACLE_SID=ORCLCDB \
+-e ORACLE_PWD=P@ssw0rd \
+container-registry.oracle.com/database/express:21.3.0-xe
+
+# access the container
+docker exec -it oracledb bash
+
+# now u need to use sql to alter system account
+sqlplus / as sysdba
+> ALTER USER system IDENTIFIED BY oracle;    # where oracle is new password
+> exit
+
+# check if system is working 
+sqlplus system/oracle@XE
+
+
+
+# Create and spin ldap container
+
+docker run --detach --rm --name openldap7 --hostname oldap7 \
+  --network mustafa \
+  --ip=172.21.0.5 \
+  --dns="172.21.0.10" \
+  --env LDAP_ADMIN_USERNAME=admin \
+  --env LDAP_ADMIN_PASSWORD=P@ssw0rd \
+  --env LDAP_USERS=customuser \
+  --env LDAP_PASSWORDS=P@ss1234 \
+  --env LDAP_USER_DC=users\
+  --env LDAP_GROUP_DC=groups\
+  --env LDAP_USERS=mustafa \
+  --env LDAP_PASSWORDS=P@ss1979 \
+  --env LDAP_ROOT=dc=test777,dc=com \
+  --env LDAP_ADMIN_DN=cn=admin,dc=test777,dc=com \
+  -v openldap7:/bitnami/openldap \
+  -p 1389:1389 -p 1636:1636 \
+  bitnami/openldap:latest
+
+
+# Create and spin dns container
+docker build -t dns-master ./
+docker run -d -p 53:53/tcp -p 53:53/udp  --rm --name=dns-master --net=mustafa --ip=172.21.0.10 dns-master
+
+
+# Create and spin Kerberos container
+docker run -it --user root --name mykdc --dns="172.21.0.10" \
+    --network mustafa --rm --hostname ubuntu.domain.local \
+    kdc-master:0.0.1 bash
+
+service krb5-kdc restart
+service krb5-admin-server restart
+kinit root/admin
+klist
+
+
+# Create and spin applicaton container
+docker build -t dragonpython:0.0.1 ./
+docker run -it --name my_python_container \
+    --network mustafa --rm --dns="172.21.0.10" \
+    dragonpython:0.0.1 bash

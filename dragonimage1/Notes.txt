@@ -1,0 +1,17 @@
+docker network create mustafa
+
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P@ssw0rd" \
+    -p 1433:1433 --name sql_server_container \
+    --network mustafa \
+    -d mcr.microsoft.com/mssql/server:2019-latest
+
+docker run --name my_python_container \
+    --network mustafa \
+    -d my_python_image
+
+
+To spin a mssql server container.
+
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P@ssw0rd" \
+    -p 1433:1433 --name sql_server_container \
+    -d mcr.microsoft.com/mssql/server:2019-latest

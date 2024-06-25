@@ -1,0 +1,11 @@
+# Build new image depending on python image latest
+FROM ubuntu:latest
+
+# Identify the maintainer of the image
+LABEL version="0.0.1"
+LABEL maintainer="godric.phoenix@gmail.com"
+
+# Install required dependencies
+RUN apt-get update && \
+    apt-get install -y wget realmd sssd krb5-user && \
+    rm -rf /var/lib/apt/lists/*

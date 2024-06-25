@@ -1,0 +1,84 @@
+# Build new image depending on python image latest
+FROM ubuntu:16.04
+
+# Identify the maintainer of the image
+LABEL version="0.0.1"
+LABEL maintainer="godric.phoenix@gmail.com"
+
+# Copy the Kerberos configuration file and any other necessary files
+COPY krb5.conf /etc/krb5.conf
+
+
+# Install required dependencies
+RUN apt-get update && \
+    apt-get install -y wget iputils-ping dnsutils net-tools vim expect  
+
+
+# Install krb5-kdc
+RUN apt-get install krb5-kdc -y
+
+#Install krb5-admin-server
+RUN apt-get install krb5-admin-server -y
+
+# Set the default password for the Kerberos realm
+ARG REALM_PASSWORD=P@ss1234
+
+# # Use expect to automate the krb5_newrealm command
+# RUN expect -c 'spawn krb5_newrealm; expect "Enter KDC database master key:"; send -- "P@ssw0rd\r"; sleep 5 ; expect "Re-enter KDC database master key to verify:"; send -- "P@ssw0rd\r"; interact' > /var/log/expect.log 2>&1
+
+# Copy the shell script to the container
+COPY setup_krb5.sh /tmp/setup_krb5.sh
+
+# Run the shell script
+RUN /bin/bash /tmp/setup_krb5.sh  > /var/log/expect.log 2>&1
+
+RUN sleep 3
+# Use sed to uncomment the line */admin *
+RUN sed -i 's/# \*\/admin \*/\*\/admin \*/' /etc/krb5kdc/kadm5.acl
+
+# Restart ing KDC will cause it to load the ACLs from that file, so make sure  it's ready before running the script RUN echo "*/*@*" >> 
+RUN service krb5-kdc restart; service krb5-admin-server restart
+
+# Set the KADMIN password for kadmin.local
+ARG  KADMIN_PASSWORD=P@ssw0rd
+
+# # Authenticate principal root/admin
+# RUN expect -c 'kadmin.local; expect "kadmin.local:"; send "addprinc root/admin\r"; expect "Enter password for principal "root/admin@TEST777.COM":"; send "$env(KADMIN_PASSWORD)\r"; expect "Re-enter password for principal "root/admin@TEST777.COM":"; send "$env(KADMIN_PASSWORD)\r"; interact'
+
+# Copy the shell script to the container
+COPY setup_kadmin.sh /tmp/setup_kadmin.sh
+
+# Run the shell script
+RUN /bin/bash /tmp/setup_kadmin.sh  > /var/log/kadmin.log 2>&1
+RUN sleep 2
+
+# Be sure both services running
+RUN service krb5-kdc restart
+RUN service krb5-admin-server restart
+RUN sleep 1
+
+# Copy setup_kinit shell script
+COPY setup_kinit.sh /tmp/setup_kinit.sh
+
+# Obtains or renews a Kerberos ticket-granting ticket 
+# RUN /bin/bash /tmp/setup_kinit.sh > /var/log/kinit.log 2>&1
+
+
+# root@ubuntu:/# kadmin -p root/admin
+# Authenticating as principal root/admin with password.
+# Password for root/admin@DOMAIN.LOCAL:
+# kadmin:  listprincs
+# K/M@DOMAIN.LOCAL
+# kadmin/admin@DOMAIN.LOCAL
+# kadmin/changepw@DOMAIN.LOCAL
+# kadmin/localhost@DOMAIN.LOCAL
+# kiprop/localhost@DOMAIN.LOCAL
+# krbtgt/DOMAIN.LOCAL@DOMAIN.LOCAL
+# root/admin@DOMAIN.LOCAL
+# kadmin:  addprinc otro/admin
+# WARNING: no policy specified for otro/admin@DOMAIN.LOCAL; defaulting to no policy
+# Enter password for principal "otro/admin@DOMAIN.LOCAL":
+# Re-enter password for principal "otro/admin@DOMAIN.LOCAL":
+# Principal "otro/admin@DOMAIN.LOCAL" created.
+
+# RUN rm -rf /var/lib/apt/lists/*

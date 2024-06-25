@@ -1,0 +1,14 @@
+$ttl    604800
+@       IN      SOA     ns.domain.local. root.domain.local. (
+                  3     ; Serial
+             604800     ; Refresh
+              86400     ; Retry
+            2419200     ; Expire
+             604800 )   ; Negative Cache TTL
+
+
+@       IN      ns     ns.domain.local.
+@       IN      A      172.21.0.2
+ns      IN      A      172.21.0.2
+
+mykdc   IN     A      172.21.0.2

@@ -1,0 +1,5 @@
+pyodbc==4.0.39
+cx-Oracle==8.3.0
+selenium
+python-ldap
+gssapi

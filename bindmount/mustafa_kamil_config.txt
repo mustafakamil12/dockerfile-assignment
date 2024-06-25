@@ -1,0 +1,4 @@
+Hello This is test config file
+The only purpose of it is to serve bindmount option
+I just add new line Hello Yousif
+I just add this from nginx container
