@@ -1,0 +1,90 @@
+version: '3.8'  # Specify the Docker Compose file format version
+
+services:  # Define services
+  web:  # Service name
+    image: nginx:latest  # Docker image to use
+    container_name: nginx_web  # Custom container name
+    ports:
+      - "8080:80"  # Expose ports
+    environment:  # Environment variables
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    volumes:  # Volume mounts
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:  # Networks this service is part of
+      - frontend
+    deploy:  # Swarm deployment settings
+      replicas: 3  # Number of replicas
+      update_config:  # Rolling update configuration
+        parallelism: 2
+        delay: 10s
+      restart_policy:  # Restart policy
+        condition: on-failure
+      labels:  # Metadata labels
+        - "com.example.description=Web service"
+      placement:  # Placement constraints
+        constraints:
+          - node.role == worker
+
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: mydb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        - "com.example.description=Database service"
+      placement:
+        constraints:
+          - node.role == manager
+
+  redis:
+    image: redis:alpine
+    container_name: redis_cache
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+      restart_policy:
+        condition: any
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8081:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:  # Define networks
+  frontend:
+    driver: overlay  # Network driver
+    attachable: true  # Allow standalone containers to attach to this network
+  backend:
+    driver: overlay
+
+volumes:  # Define volumes
+  db_data:
+  redis_data:
+
+configs:  # Configs for services
+  my_config:
+    file: ./my_config_file.txt
+
+secrets:  # Secrets for services
+  my_secret:
+    file: ./my_secret_file.txt
